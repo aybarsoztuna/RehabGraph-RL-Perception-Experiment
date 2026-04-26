@@ -3,48 +3,52 @@ import pandas as pd
 import numpy as np
 
 def load_joint_positions(file_path):
-    """Load and reshape Joint_Positions.csv from Toronto Rehab dataset"""
+    """Load Joint_Positions.csv and reshape to (num_frames, 25 joints, 3 coordinates)"""
     df = pd.read_csv(file_path, header=None)
+    data = df.values.astype(np.float32)  # shape: (num_rows, 3)
     
-    # The file has 3 columns: X, Y, Z stacked
-    # Every 25 rows = 1 frame with 25 joints
     num_joints = 25
-    data = df.values  # shape: (num_frames * 25, 3)
+    if len(data) % num_joints != 0:
+        print(f"Warning: Truncating data in {file_path}")
+        data = data[: (len(data) // num_joints) * num_joints]
     
     num_frames = len(data) // num_joints
-    if len(data) % num_joints != 0:
-        print(f"Warning: Data length not divisible by 25 in {file_path}")
-        data = data[:num_frames * num_joints]
+    # Reshape to (frames, joints, xyz)
+    poses = data.reshape(num_frames, num_joints, 3)
     
-    # Reshape to (num_frames, num_joints, 3)
-    reshaped = data.reshape(num_frames, num_joints, 3)
-    print(f"Loaded {file_path}: {num_frames} frames, {num_joints} joints")
-    return reshaped
+    print(f"Loaded {os.path.basename(file_path)}: {num_frames} frames, {num_joints} joints")
+    return poses
 
-def preprocess_participant(participant_dir):
-    """Load all Joint_Positions.csv from a participant subfolders"""
-    all_data = []
+def load_participant_data(participant_path):
+    """Load all Joint_Positions.csv from a participant (including subfolders)"""
+    all_poses = []
     
-    for root, dirs, files in os.walk(participant_dir):
+    for root, _, files in os.walk(participant_path):
         for file in files:
-            if file == "Joint_Positions.csv":
-                file_path = os.path.join(root, file)
+            if file.lower() == "joint_positions.csv":
+                full_path = os.path.join(root, file)
                 try:
-                    poses = load_joint_positions(file_path)
-                    all_data.append(poses)
+                    poses = load_joint_positions(full_path)
+                    all_poses.append(poses)
                 except Exception as e:
-                    print(f"Error loading {file_path}: {e}")
+                    print(f"Error loading {full_path}: {e}")
     
-    if all_data:
-        combined = np.concatenate(all_data, axis=0)
-        print(f"Combined data shape: {combined.shape} (frames, joints, 3)")
+    if all_poses:
+        combined = np.concatenate(all_poses, axis=0)
+        print(f"Total combined shape for participant: {combined.shape} (frames, joints, 3)")
         return combined
-    return None
+    else:
+        print("No Joint_Positions.csv found!")
+        return None
 
-# Example usage for P07
+# Test with P07
 if __name__ == "__main__":
-    p07_path = "data/P07"   # change if your path is different
-    data = preprocess_participant(p07_path)
+    p07_dir = "data/P07"   # Adjust if your path is different
+    data = load_participant_data(p07_dir)
+    
     if data is not None:
-        np.save("data/P07_processed.npy", data)
-        print("Saved processed data as P07_processed.npy")
+        # Save processed data
+        save_path = "data/P07_processed.npy"
+        np.save(save_path, data)
+        print(f"✅ Saved processed data to {save_path}")
+        print(f"Shape: {data.shape}")
