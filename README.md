@@ -87,6 +87,23 @@ This repository contains the implementation and experimental analysis for **Stag
 
 Current evaluation is limited to a single participant (P07). Cross-subject generalization across all 19 participants (healthy + stroke survivors) will be addressed in future work.
 
----
-
 ## Repository Structure
+RehabGraph-RL-Perception-Experiment/
+├── data/
+│ ├── P07_processed.npy
+│ └── preprocess.py
+├── experiments/
+│ ├── TCN/
+│ │ └── tcn_model.py
+│ ├── STGCN/
+│ │ └── stgcn_model.py
+│ └── GTFN/
+│ └── gtfn_model.py # ORIGINAL CONTRIBUTION (8th Method)
+├── notebooks/
+│ └── experiment_upper_limb_regression.ipynb
+├── README.md
+└── requirements.txt
+
+Author
+Aybars Oztuna (PhD Candidate)
+Date: June 2025
